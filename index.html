@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Source Selector</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          animation: {
+            'slide-in': 'slideIn 0.3s ease-out',
+            'slide-out': 'slideOut 0.3s ease-in',
+          },
+          keyframes: {
+            slideIn: {
+              '0%': { transform: 'translateX(-100%)' },
+              '100%': { transform: 'translateX(0)' },
+            },
+            slideOut: {
+              '0%': { transform: 'translateX(0)' },
+              '100%': { transform: 'translateX(-100%)' },
+            },
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4 overflow-hidden">
+
+  <!-- Main Content -->
+  <div class="w-full max-w-md flex flex-col items-center space-y-6 animate-slide-in">
+    <!-- Title -->
+    <h1 class="text-2xl font-bold text-center">Select Video Source</h1>
+
+    <!-- Buttons -->
+    <div class="flex space-x-4 w-full justify-center">
+      <a href="abyss.html" id="abyssButton" class="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-lg transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-center">
+        Abyss
+      </a>
+      <a href="pomf.html" id="pomfButton" class="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md shadow-lg transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 text-center">
+        Pomf
+      </a>
+    </div>
+
+    <!-- Information Box -->
+    <div class="w-full p-6 bg-gray-800 rounded-md shadow-lg border border-gray-700 animate-slide-in">
+      <h2 class="text-lg font-semibold mb-3 text-gray-300">Source Information</h2>
+      <p class="text-sm text-gray-200 mb-2">
+        <strong>Abyss:</strong> This is the place the video will load a bit faster, but have ads, need browser have ads blocker extension enable.
+      </p>
+      <p class="text-sm text-gray-200">
+        <strong>Pomf:</strong> No ads, but slower.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Handle window resize for responsiveness (similar to original)
+    window.addEventListener('resize', function() {
+      // Ensure layout adapts (no specific logic needed here, but placeholder for consistency)
+    });
+  </script>
+
+</body>
+</html>
