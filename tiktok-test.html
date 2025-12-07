@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Dark High-Contrast Video Playlist</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #000;
+            color: #fff;
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+        }
+        #sidebar {
+            width: 300px;
+            background: #111;
+            border-right: 2px solid #333;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.6);
+            position: fixed;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            left: 0;
+            transition: transform 0.3s ease;
+        }
+        #sidebar h2 {
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            color: #00ccff;
+            text-align: center;
+            text-shadow: 0 0 8px rgba(0, 204, 255, 0.5);
+            font-weight: 700;
+        }
+        #playlist-container {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        #playlist-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        #playlist-container::-webkit-scrollbar-track {
+            background: #111;
+            border-radius: 4px;
+        }
+        #playlist-container::-webkit-scrollbar-thumb {
+            background: #00ccff;
+            border-radius: 4px;
+            box-shadow: 0 0 6px rgba(0, 204, 255, 0.6);
+        }
+        #playlist {
+            list-style: none;
+        }
+        #playlist li {
+            margin: 8px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+            border: 1px solid #333;
+        }
+        #playlist li a {
+            display: block;
+            padding: 12px 14px;
+            text-decoration: none;
+            color: #e0e0e0;
+            background: #1a1a1a;
+            transition: all 0.25s ease;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+        #playlist li:hover a {
+            background: #00aaff;
+            color: #000;
+            font-weight: 700;
+        }
+        #playlist li.active a {
+            background: #00ccff;
+            color: #000;
+            font-weight: 800;
+            border-left: 5px solid #00ff99;
+            box-shadow: 0 0 15px rgba(0, 204, 255, 0.7);
+        }
+        #main-content {
+            margin-left: 300px;
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #0a0a0a;
+        }
+        #current-title {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #00ff99;
+            margin-bottom: 18px;
+            text-shadow: 0 0 12px rgba(0, 255, 153, 0.7);
+        }
+        #player-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            background: #000;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 204, 255, 0.3);
+            margin-bottom: 15px;
+            border: 2px solid #00ccff;
+        }
+        #player-container::before {
+            content: '';
+            display: block;
+            padding-bottom: 56.25%;
+        }
+        #video-player {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: 2px solid #00ff99;
+            outline-offset: -2px;
+        }
+
+        /* Control Bars */
+        #control-player, #control2, #controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            width: 100%;
+            max-width: 900px;
+            padding: 12px;
+            background: #1a1a1a;
+            border-radius: 10px;
+            border: 1px solid #333;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #00ff99;
+            flex-wrap: wrap;
+        }
+
+        #control-player {
+            justify-content: space-between;
+            position: relative;
+        }
+
+        #control2 {
+            font-size: 1.1rem;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .video-counter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .seek-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.1rem;
+        }
+
+        #current-video-input,
+        #seek-seconds-input {
+            width: 70px;
+            padding: 6px 10px;
+            background: #000;
+            border: 2px solid #00ccff;
+            border-radius: 6px;
+            color: #00ff99;
+            font-size: 1.3rem;
+            font-weight: 700;
+            text-align: center;
+            outline: none;
+            transition: all 0.2s, width 0.2s ease;
+        }
+
+        #seek-seconds-input {
+            width: 80px;
+            font-size: 1.4rem;
+            border-color: #00ff99;
+            box-shadow: 0 0 10px rgba(0, 255, 153, 0.4);
+        }
+
+        #current-video-input:focus,
+        #seek-seconds-input:focus {
+            border-color: #00ff99;
+            box-shadow: 0 0 12px rgba(0, 255, 153, 0.7);
+        }
+
+        #current-video-input::-webkit-inner-spin-button,
+        #current-video-input::-webkit-outer-spin-button,
+        #seek-seconds-input::-webkit-inner-spin-button,
+        #seek-seconds-input::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        #current-video-input[type=number],
+        #seek-seconds-input[type=number] {
+            -moz-appearance: textfield;
+        }
+        .counter-separator {
+            color: #00ccff;
+            font-size: 1.3rem;
+            margin: 0 4px;
+        }
+        .counter-total {
+            color: #00ccff;
+        }
+
+        /* "I feel lucky" Button */
+        #lucky-btn {
+            background: #ff00aa;
+            color: #fff;
+            font-weight: 700;
+            padding: 10px 16px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(255, 0, 170, 0.6);
+            white-space: nowrap;
+        }
+        #lucky-btn:hover {
+            background: #ff33bb;
+            box-shadow: 0 0 18px rgba(255, 51, 187, 0.9);
+            transform: translateY(-2px);
+        }
+
+        #controls {
+            display: flex;
+            flex-direction: row;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+        }
+        .nav-group {
+            flex-shrink: 0;
+            gap: 8px;
+        }
+        .volume-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        .auto-next-group,
+        .loop-group {
+            flex-shrink: 0;
+            margin-left: auto;
+        }
+        .locate-group {
+            flex-shrink: 0;
+        }
+        label {
+            color: #00ff99;
+            font-weight: 600;
+            font-size: 1rem;
+            text-shadow: 0 0 5px rgba(0, 255, 153, 0.4);
+        }
+        button {
+            background: #00aaff;
+            color: #000;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.2s;
+            box-shadow: 0 0 8px rgba(0, 170, 255, 0.5);
+            cursor: pointer;
+            white-space: nowrap;
+            touch-action: manipulation;
+        }
+        button:hover {
+            background: #00ccff;
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(0, 204, 255, 0.8);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        button.active {
+            background: #00ff99;
+            color: #000;
+            box-shadow: 0 0 20px rgba(0, 255, 153, 0.9);
+        }
+        button:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        button:disabled:hover {
+            transform: none;
+        }
+        #locate-btn {
+            background: #ff6600;
+            color: #fff;
+            font-weight: 700;
+            box-shadow: 0 0 10px rgba(255, 102, 0, 0.6);
+            padding: 10px 20px;
+        }
+        #locate-btn:hover {
+            background: #ff8833;
+            box-shadow: 0 0 18px rgba(255, 136, 51, 0.9);
+            transform: translateY(-2px);
+        }
+        input[type="range"] {
+            flex: 1;
+            height: 10px;
+            border-radius: 5px;
+            background: #333;
+            outline: none;
+            -webkit-appearance: none;
+            accent-color: #00ccff;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            background: #00ff99;
+            border-radius: 50%;
+            box-shadow: 0 0 12px rgba(0, 255, 153, 0.8);
+            cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 22px;
+            height: 22px;
+            background: #00ff99;
+            border-radius: 50%;
+            box-shadow: 0 0 12px rgba(0, 255, 153, 0.8);
+            cursor: pointer;
+            border: none;
+        }
+        .volume-display {
+            color: #00ff99;
+            font-weight: 700;
+            min-width: 50px;
+            text-align: center;
+            font-size: 1.1rem;
+            text-shadow: 0 0 8px rgba(0, 255, 153, 0.6);
+        }
+
+        /* Mobile toggle button */
+        #mobile-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 101;
+            background: #00ccff;
+            color: #000;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            box-shadow: 0 0 15px rgba(0, 204, 255, 0.8);
+            cursor: pointer;
+            touch-action: manipulation;
+            line-height: 1;
+        }
+
+        #mobile-toggle:active {
+            transform: scale(0.95);
+        }
+
+        /* Overlay for mobile */
+        #sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 99;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Tablet and below */
+        @media (max-width: 1024px) {
+            #sidebar {
+                width: 250px;
+            }
+            #main-content {
+                margin-left: 250px;
+            }
+        }
+
+        /* Mobile landscape and below */
+        @media (max-width: 900px) {
+            #mobile-toggle {
+                display: block;
+            }
+
+            #sidebar {
+                width: 280px;
+                left: 0;
+                right: auto;
+                border-right: 2px solid #333;
+                border-left: none;
+                box-shadow: 4px 0 15px rgba(0,0,0,0.6);
+                transform: translateX(-100%);
+            }
+
+            #sidebar.open {
+                transform: translateX(0);
+            }
+
+            #sidebar-overlay.show {
+                display: block;
+                opacity: 1;
+            }
+
+            #main-content {
+                margin-left: 0;
+                padding: 60px 15px 15px 15px;
+            }
+
+            #current-title {
+                font-size: 1.3rem;
+                margin-bottom: 15px;
+            }
+
+            #player-container {
+                border-radius: 10px;
+            }
+
+            #control-player, #control2, #controls {
+                gap: 12px;
+                padding: 12px;
+            }
+
+            .volume-group {
+                min-width: 180px;
+            }
+        }
+
+        /* Mobile portrait */
+        @media (max-width: 600px) {
+            #mobile-toggle {
+                top: 10px;
+                left: 10px;
+                padding: 10px 14px;
+                font-size: 0.85rem;
+            }
+
+            #sidebar {
+                width: 85%;
+                max-width: 320px;
+                padding: 15px;
+            }
+
+            #sidebar h2 {
+                font-size: 1.2rem;
+                margin-bottom: 12px;
+            }
+
+            #playlist li a {
+                padding: 10px 12px;
+                font-size: 0.9rem;
+            }
+
+            #main-content {
+                padding: 55px 12px 12px 12px;
+            }
+
+            #current-title {
+                font-size: 1.1rem;
+                margin-bottom: 12px;
+            }
+
+            #player-container {
+                border-radius: 8px;
+                border: 1px solid #00ccff;
+            }
+
+            #video-player {
+                outline: 1px solid #00ff99;
+            }
+
+            #control-player, #control2 {
+                font-size: 1rem;
+                padding: 10px;
+                margin-bottom: 12px;
+                gap: 12px;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            #control-player {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+
+            #control-player .video-counter-group {
+                order: 2;
+            }
+
+            #lucky-btn {
+                order: 1;
+                width: 100%;
+                margin-bottom: 8px;
+            }
+
+            #control2 .seek-input-group,
+            #control2 .auto-next-group,
+            #control2 .loop-group {
+                margin-left: 0 !important;
+                justify-content: center;
+            }
+
+            #controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+                padding: 10px;
+            }
+
+            .control-group {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .nav-group {
+                justify-content: center;
+            }
+
+            .volume-group {
+                min-width: auto;
+                width: 100%;
+            }
+
+            .auto-next-group,
+            .loop-group,
+            .locate-group {
+                justify-content: center;
+            }
+
+            button {
+                padding: 12px 20px;
+                font-size: 1rem;
+                min-height: 44px;
+            }
+
+            #locate-btn {
+                padding: 12px 24px;
+                width: 100%;
+            }
+
+            label {
+                font-size: 0.95rem;
+            }
+
+            .volume-display {
+                font-size: 1rem;
+                min-width: 45px;
+            }
+
+            input[type="range"] {
+                height: 12px;
+            }
+
+            input[type="range"]::-webkit-slider-thumb {
+                width: 26px;
+                height: 26px;
+            }
+
+            input[type="range"]::-moz-range-thumb {
+                width: 26px;
+                height: 26px;
+            }
+        }
+
+        /* Extra small devices */
+        @media (max-width: 400px) {
+            #sidebar {
+                width: 90%;
+                padding: 12px;
+            }
+
+            #main-content {
+                padding: 50px 10px 10px 10px;
+            }
+
+            #current-title {
+                font-size: 1rem;
+            }
+
+            #control-player, #control2 {
+                font-size: 0.9rem;
+                padding: 8px;
+                gap: 10px;
+            }
+
+            #current-video-input,
+            #seek-seconds-input {
+                width: 60px;
+                font-size: 1.1rem;
+            }
+
+            #controls {
+                padding: 8px;
+            }
+
+            button {
+                font-size: 0.9rem;
+                padding: 10px 16px;
+            }
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 15px rgba(0, 204, 255, 0.7); }
+            50% { box-shadow: 0 0 30px rgba(0, 255, 153, 1); transform: scale(1.02); }
+            100% { box-shadow: 0 0 15px rgba(0, 204, 255, 0.7); }
+        }
+
+        @keyframes volumePulse {
+            0% { box-shadow: 0 0 8px rgba(0, 255, 153, 0.4); }
+            50% { box-shadow: 0 0 16px rgba(0, 255, 153, 0.9); }
+            100% { box-shadow: 0 0 8px rgba(0, 255, 153, 0.4); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Mobile Toggle Button -->
+    <button id="mobile-toggle">PLAYLIST</button>
+
+    <!-- Sidebar Overlay -->
+    <div id="sidebar-overlay"></div>
+
+    <!-- Sidebar with Scrollable Playlist Only -->
+    <aside id="sidebar">
+        <h2>PLAYLIST</h2>
+
+        <!-- Scrollable Playlist -->
+        <div id="playlist-container">
+            <ul id="playlist">
+                <!-- Auto-filled by JS -->
+            </ul>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main id="main-content">
+        <h1 id="current-title">LOADING...</h1>
+
+        <!-- Video Player -->
+        <div id="player-container">
+            <video id="video-player" controls autoplay playsinline>
+                <source src="" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+
+        <!-- Control Player Bar: "I feel lucky" (left) + Counter (right) -->
+        <div id="control-player">
+            <button id="lucky-btn">I feel lucky</button>
+            <div class="video-counter-group">
+                <input type="number" id="current-video-input" min="1" value="1">
+                <span class="counter-separator">/</span>
+                <span id="total-videos" class="counter-total">0</span>
+            </div>
+        </div>
+
+        <!-- Control Bar 2: Seek (left), Auto Next + Loop (right) -->
+        <div id="control2">
+            <div class="seek-input-group">
+                <label for="seek-seconds-input">Seek:</label>
+                <input type="number" id="seek-seconds-input" min="1" max="60" value="5">
+                <span>sec</span>
+            </div>
+
+            <div class="control-group auto-next-group">
+                <label>Auto Next:</label>
+                <button id="auto-next-btn" class="active">ON</button>
+            </div>
+
+            <div class="control-group loop-group">
+                <label>Loop:</label>
+                <button id="loop-btn">OFF</button>
+            </div>
+        </div>
+
+        <!-- Fixed-Layout Controls -->
+        <div id="controls">
+            <div class="control-group nav-group">
+                <button id="prev-btn">Previous</button>
+                <button id="next-btn">Next</button>
+            </div>
+
+            <div class="control-group volume-group">
+                <label for="volume-slider">Volume:</label>
+                <input type="range" id="volume-slider" min="0" max="100" value="80">
+                <span id="volume-display" class="volume-display">80%</span>
+            </div>
+
+            <div class="control-group locate-group">
+                <button id="locate-btn">Lost track?</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // ==================== VIDEO URLs ====================
+        const videoListText = `
+https://cdn.videy.co/WPNsVWRA1.mp4
+https://cdn.videy.co/P9JZp8ge1.mp4
+https://cdn.videy.co/JlepyyQn1.mp4
+https://cdn.videy.co/w3wntADA1.mp4
+https://cdn.videy.co/OAkyakTq1.mp4
+https://cdn.videy.co/LfnH1cHZ1.mp4
+https://cdn.videy.co/LMMS9brn1.mp4
+https://cdn.videy.co/0ozyIxux1.mp4
+https://cdn.videy.co/3y33kG7z1.mp4
+https://cdn.videy.co/eNGV92Tt1.mp4
+https://cdn.videy.co/HYGlgYQL1.mp4
+https://cdn.videy.co/uA4CF8461.mp4
+https://cdn.videy.co/Vdlc2SQO1.mp4
+https://cdn.videy.co/Ax5EWOc31.mp4
+https://cdn.videy.co/NFs1f4521.mp4
+https://cdn.videy.co/Z2xuB64e1.mp4
+https://cdn.videy.co/9iLrynLW1.mp4
+https://cdn.videy.co/Cb28A5AK1.mp4
+https://cdn.videy.co/NVVNg1Jq1.mp4
+https://cdn.videy.co/aL8gPH2c1.mp4
+https://cdn.videy.co/1roCPQct1.mp4
+https://cdn.videy.co/G5wuIO7R1.mp4
+        `.trim();
+
+        const videoLinks = videoListText
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line.startsWith('http'));
+        // ====================================================================
+
+        const player = document.getElementById('video-player');
+        const source = document.createElement('source');
+        player.appendChild(source);
+        const playlist = document.getElementById('playlist');
+        const currentTitle = document.getElementById('current-title');
+        const volumeSlider = document.getElementById('volume-slider');
+        const volumeDisplay = document.getElementById('volume-display');
+        const autoNextBtn = document.getElementById('auto-next-btn');
+        const loopBtn = document.getElementById('loop-btn');
+        const locateBtn = document.getElementById('locate-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const luckyBtn = document.getElementById('lucky-btn');
+        const mobileToggle = document.getElementById('mobile-toggle');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const currentVideoInput = document.getElementById('current-video-input');
+        const seekSecondsInput = document.getElementById('seek-seconds-input');
+        const totalVideosSpan = document.getElementById('total-videos');
+
+        let currentIndex = 0;
+        let autoNextEnabled = true;
+        let loopEnabled = false;
+        let userChangingVolume = false;
+
+        // Set total videos
+        totalVideosSpan.textContent = videoLinks.length;
+        currentVideoInput.max = videoLinks.length;
+
+        // === RESIZE VIDEO INPUT ===
+        function resizeCurrentVideoInput() {
+            const input = currentVideoInput;
+            const value = input.value || '1';
+            const tempSpan = document.createElement('span');
+            const styles = window.getComputedStyle(input);
+            tempSpan.style.font = styles.font;
+            tempSpan.style.padding = styles.padding;
+            tempSpan.style.visibility = 'hidden';
+            tempSpan.style.position = 'absolute';
+            tempSpan.style.whiteSpace = 'nowrap';
+            tempSpan.textContent = value;
+            document.body.appendChild(tempSpan);
+            const textWidth = tempSpan.offsetWidth;
+            document.body.removeChild(tempSpan);
+            const newWidth = Math.min(120, Math.max(50, textWidth + 20));
+            input.style.width = `${newWidth}px`;
+        }
+
+        // === SEEK FUNCTION ===
+        function seekVideo(seconds) {
+            if (!player.duration) return;
+            const seekAmount = seconds !== undefined ? seconds : (parseInt(seekSecondsInput.value) || 5);
+            const newTime = Math.max(0, Math.min(player.duration, player.currentTime + seekAmount));
+            player.currentTime = newTime;
+        }
+
+        // === I FEEL LUCKY: Random video (not current) ===
+        luckyBtn.addEventListener('click', () => {
+            if (videoLinks.length <= 1) return;
+            let randomIndex;
+            do {
+                randomIndex = Math.floor(Math.random() * videoLinks.length);
+            } while (randomIndex === currentIndex);
+            playVideo(randomIndex);
+        });
+
+        // === FULLSCREEN TOGGLE (F key) ===
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                player.requestFullscreen().catch(err => console.log("Fullscreen failed:", err));
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // === MUTE TOGGLE (M key) ===
+        function toggleMute() {
+            player.muted = !player.muted;
+            volumeDisplay.textContent = player.muted ? 'MUTED' : `${Math.round(player.volume * 100)}%`;
+            volumeDisplay.style.color = player.muted ? '#ff5555' : '#00ff99';
+        }
+
+        // Mobile toggle
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+            sidebarOverlay.classList.toggle('show');
+        }
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            sidebarOverlay.classList.remove('show');
+        }
+        mobileToggle.addEventListener('click', toggleSidebar);
+        sidebarOverlay.addEventListener('click', closeSidebar);
+
+        // Volume sync
+        function syncExternalSlider() {
+            if (!userChangingVolume) {
+                const vol = Math.round(player.volume * 100);
+                volumeSlider.value = vol;
+                volumeDisplay.textContent = player.muted ? 'MUTED' : `${vol}%`;
+                volumeDisplay.style.color = player.muted ? '#ff5555' : '#00ff99';
+            }
+        }
+        player.volume = volumeSlider.value / 100;
+        syncExternalSlider();
+
+        function getVideoInfo(index) {
+            return { title: `Video ${index + 1}`, hash: `v${index + 1}` };
+        }
+
+        function buildPlaylist() {
+            playlist.innerHTML = '';
+            videoLinks.forEach((src, index) => {
+                const info = getVideoInfo(index);
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.href = `#${info.hash}`;
+                a.textContent = info.title;
+                a.onclick = (e) => {
+                    e.preventDefault();
+                    playVideo(index);
+                    if (window.innerWidth <= 900) setTimeout(closeSidebar, 300);
+                };
+                li.appendChild(a);
+                playlist.appendChild(li);
+            });
+        }
+
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentIndex === 0;
+            nextBtn.disabled = currentIndex === videoLinks.length - 1;
+        }
+
+        function updateCounter() {
+            currentVideoInput.value = currentIndex + 1;
+            resizeCurrentVideoInput();
+        }
+
+        function playVideo(index) {
+            if (index < 0 || index >= videoLinks.length) return;
+            currentIndex = index;
+            const info = getVideoInfo(index);
+            source.src = videoLinks[index];
+            source.type = 'video/mp4';
+            player.load();
+            player.play().catch(() => {});
+            currentTitle.textContent = info.title;
+            document.querySelectorAll('#playlist li').forEach((li, i) => {
+                li.classList.toggle('active', i === index);
+            });
+            updateNavigationButtons();
+            updateCounter();
+            history.pushState(null, null, `#${info.hash}`);
+            setTimeout(syncExternalSlider, 100);
+        }
+
+        function handleHash() {
+            const hash = window.location.hash.substring(1);
+            if (!hash) return playVideo(0);
+            const match = hash.match(/^v(\d+)$/);
+            if (match) {
+                const idx = parseInt(match[1], 10) - 1;
+                if (idx >= 0 && idx < videoLinks.length) return playVideo(idx);
+            }
+            playVideo(0);
+        }
+
+        // Counter input
+        currentVideoInput.addEventListener('change', () => {
+            let val = parseInt(currentVideoInput.value);
+            if (isNaN(val) || val < 1) val = 1;
+            if (val > videoLinks.length) val = videoLinks.length;
+            currentVideoInput.value = val;
+            playVideo(val - 1);
+            resizeCurrentVideoInput();
+        });
+        currentVideoInput.addEventListener('keypress', e => e.key === 'Enter' && currentVideoInput.blur());
+        currentVideoInput.addEventListener('input', resizeCurrentVideoInput);
+
+        // Lost track button
+        locateBtn.addEventListener('click', () => {
+            if (window.innerWidth <= 900) {
+                sidebar.classList.add('open');
+                sidebarOverlay.classList.add('show');
+            }
+            setTimeout(() => {
+                const active = document.querySelector('#playlist li.active');
+                if (active) {
+                    active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    active.style.animation = 'pulse 0.6s ease';
+                    setTimeout(() => active.style.animation = '', 600);
+                }
+            }, 100);
+        });
+
+        // Video end
+        player.addEventListener('ended', () => {
+            if (loopEnabled) {
+                player.currentTime = 0;
+                player.play().catch(() => {});
+            } else if (autoNextEnabled && currentIndex < videoLinks.length - 1) {
+                playVideo(currentIndex + 1);
+            }
+        });
+
+        // Volume
+        volumeSlider.addEventListener('input', () => {
+            userChangingVolume = true;
+            const vol = volumeSlider.value;
+            player.volume = vol / 100;
+            player.muted = false;
+            volumeDisplay.textContent = `${vol}%`;
+            volumeDisplay.style.color = '#00ff99';
+            userChangingVolume = false;
+        });
+        player.addEventListener('volumechange', syncExternalSlider);
+        player.addEventListener('loadedmetadata', syncExternalSlider);
+        player.addEventListener('play', syncExternalSlider);
+
+        // Scroll wheel volume
+        const volumeGroup = document.querySelector('.volume-group');
+        volumeGroup.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const step = 2;
+            let vol = parseInt(volumeSlider.value);
+            vol = e.deltaY > 0 ? Math.max(0, vol - step) : Math.min(100, vol + step);
+            volumeSlider.value = vol;
+            player.volume = vol / 100;
+            player.muted = false;
+            volumeDisplay.textContent = `${vol}%`;
+            volumeDisplay.style.color = '#00ff99';
+            volumeGroup.style.animation = 'volumePulse 0.3s ease';
+            setTimeout(() => volumeGroup.style.animation = '', 300);
+        }, { passive: false });
+
+        // Toggles
+        autoNextBtn.addEventListener('click', () => {
+            autoNextEnabled = !autoNextEnabled;
+            autoNextBtn.textContent = autoNextEnabled ? 'ON' : 'OFF';
+            autoNextBtn.classList.toggle('active', autoNextEnabled);
+            if (autoNextEnabled && loopEnabled) {
+                loopEnabled = false;
+                loopBtn.textContent = 'OFF';
+                loopBtn.classList.remove('active');
+            }
+        });
+
+        loopBtn.addEventListener('click', () => {
+            loopEnabled = !loopEnabled;
+            loopBtn.textContent = loopEnabled ? 'ON' : 'OFF';
+            loopBtn.classList.toggle('active', loopEnabled);
+            if (loopEnabled && autoNextEnabled) {
+                autoNextEnabled = false;
+                autoNextBtn.textContent = 'OFF';
+                autoNextBtn.classList.remove('active');
+            }
+        });
+
+        // Seek input
+        seekSecondsInput.addEventListener('change', () => {
+            let val = parseInt(seekSecondsInput.value);
+            if (isNaN(val) || val < 1) val = 1;
+            if (val > 60) val = 60;
+            seekSecondsInput.value = val;
+        });
+        seekSecondsInput.addEventListener('keypress', e => e.key === 'Enter' && seekSecondsInput.blur());
+
+        // Nav
+        prevBtn.addEventListener('click', () => currentIndex > 0 && playVideo(currentIndex - 1));
+        nextBtn.addEventListener('click', () => currentIndex < videoLinks.length - 1 && playVideo(currentIndex + 1));
+
+        // === KEYBOARD SHORTCUTS ===
+        document.addEventListener('keydown', (e) => {
+            if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+
+            const shift = e.shiftKey;
+            switch (e.key.toLowerCase()) {
+                case ' ':
+                    e.preventDefault();
+                    player.paused ? player.play() : player.pause();
+                    break;
+
+                case 'f':
+                    e.preventDefault();
+                    toggleFullscreen();
+                    break;
+
+                case 'm':
+                    e.preventDefault();
+                    toggleMute();
+                    break;
+
+                case 'arrowleft':
+                    e.preventDefault();
+                    shift ? (currentIndex > 0 && playVideo(currentIndex - 1)) : seekVideo(-parseInt(seekSecondsInput.value) || -5);
+                    break;
+
+                case 'arrowright':
+                    e.preventDefault();
+                    shift ? (currentIndex < videoLinks.length - 1 && playVideo(currentIndex + 1)) : seekVideo(parseInt(seekSecondsInput.value) || 5);
+                    break;
+
+                case 'arrowup':
+                    e.preventDefault();
+                    const up = Math.min(100, parseInt(volumeSlider.value) + 5);
+                    volumeSlider.value = up; player.volume = up / 100; player.muted = false;
+                    volumeDisplay.textContent = `${up}%`; volumeDisplay.style.color = '#00ff99';
+                    break;
+
+                case 'arrowdown':
+                    e.preventDefault();
+                    const down = Math.max(0, parseInt(volumeSlider.value) - 5);
+                    volumeSlider.value = down; player.volume = down / 100; player.muted = false;
+                    volumeDisplay.textContent = `${down}%`; volumeDisplay.style.color = '#00ff99';
+                    break;
+            }
+        });
+
+        window.addEventListener('popstate', handleHash);
+        window.addEventListener('resize', () => window.innerWidth > 900 && closeSidebar());
+
+        // === INIT ===
+        buildPlaylist();
+        handleHash();
+        resizeCurrentVideoInput();
+
+        window.addEventListener('load', () => {
+            seekSecondsInput.select && seekSecondsInput.select();
+        });
+    </script>
+</body>
+</html>
